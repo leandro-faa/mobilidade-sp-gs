@@ -7,8 +7,8 @@ import {
   TabListProps,
 } from 'expo-router/ui';
 import { SymbolView } from 'expo-symbols';
-import { Pressable, useColorScheme, View, StyleSheet } from 'react-native';
-
+import { Pressable, View, StyleSheet } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
 
 import { ExternalLink } from './external-link';
@@ -24,8 +24,12 @@ export default function AppTabs() {
           <TabTrigger name="home" href="/" asChild>
             <TabButton>Home</TabButton>
           </TabTrigger>
-          <TabTrigger name="explore" href="/explore" asChild>
-            <TabButton>Explore</TabButton>
+          <TabTrigger name="pesquisa" href="/pesquisa" asChild>
+            <TabButton>Pesquisa</TabButton>
+            </TabTrigger>
+
+          <TabTrigger name="favoritos" href="/favoritos" asChild>
+            <TabButton>Favoritos</TabButton>
           </TabTrigger>
         </CustomTabList>
       </TabList>
@@ -55,7 +59,7 @@ export function CustomTabList(props: TabListProps) {
     <View {...props} style={styles.tabListContainer}>
       <ThemedView type="backgroundElement" style={styles.innerContainer}>
         <ThemedText type="smallBold" style={styles.brandText}>
-          Expo Starter
+          Mobilidade SP
         </ThemedText>
 
         {props.children}

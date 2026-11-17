@@ -26,6 +26,13 @@ export default function AppTabs() {
           renderingMode="template"
         />
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="favoritos">
+        <NativeTabs.Trigger.Label>Favoritos</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+           sf="star.fill"
+          md="star"
+        />
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }
