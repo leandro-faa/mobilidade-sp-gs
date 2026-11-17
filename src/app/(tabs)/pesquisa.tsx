@@ -8,10 +8,10 @@ import {
   FlatList,
   Pressable,
 } from 'react-native';
-import { Link } from 'expo-router';
+
 import type { LinhaOnibus } from '@/types/linha';
 import { buscarLinhas } from '@/services/linhas';
-
+import { LinhaCard } from '@/components/linha-card';
 
 export default function PesquisaScreen() {
   const [pesquisa, setPesquisa] = useState('');
@@ -20,31 +20,34 @@ export default function PesquisaScreen() {
   const [erro, setErro] = useState('');
   const [pesquisou, setPesquisou] = useState(false);
 
-    async function pesquisarLinhas() {
-      setPesquisou(true);
-      setErro('');
+  async function pesquisarLinhas() {
+    setPesquisou(true);
+    setErro('');
 
-      if (!pesquisa.trim()) {
-        setLinhas([]);
-        setErro('Digite o número ou nome da linha.');
-        return;
-      }
-
-      setCarregando(true);
-
-      try {
-        const resultado = await buscarLinhas(pesquisa);
-        setLinhas(resultado);
-      } catch {
-        setLinhas([]);
-        setErro('Não foi possível realizar a pesquisa.');
-      } finally {
-        setCarregando(false);
-      }
+    if (!pesquisa.trim()) {
+      setLinhas([]);
+      setErro('Digite o número ou nome da linha.');
+      return;
     }
+
+    setCarregando(true);
+
+    try {
+      const resultado = await buscarLinhas(pesquisa);
+      setLinhas(resultado);
+    } catch {
+      setLinhas([]);
+      setErro('Não foi possível realizar a pesquisa.');
+    } finally {
+      setCarregando(false);
+    }
+  }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.titulo}>Pesquisar ônibus</Text>
+      <Text style={styles.titulo}>
+        Pesquisar ônibus
+      </Text>
 
       <TextInput
         style={styles.campoPesquisa}
@@ -52,13 +55,33 @@ export default function PesquisaScreen() {
         value={pesquisa}
         onChangeText={setPesquisa}
       />
-      <Pressable onPress={pesquisarLinhas} style={styles.botaoBusca}>
-        <Text style={styles.textoBotao}>Buscar linhas</Text>
-</Pressable>
 
-      <Text style={styles.subtitulo}>Linhas disponíveis</Text>
-      {carregando && <Text>Buscando linhas...</Text>}
-      {erro ? <Text>{erro}</Text> : null}
+      <Pressable
+        onPress={pesquisarLinhas}
+        style={styles.botaoBusca}
+        disabled={carregando}
+      >
+        <Text style={styles.textoBotao}>
+          Buscar linhas
+        </Text>
+      </Pressable>
+
+      <Text style={styles.subtitulo}>
+        Linhas disponíveis
+      </Text>
+
+      {carregando && (
+        <Text style={styles.descricao}>
+          Buscando linhas...
+        </Text>
+      )}
+
+      {erro ? (
+        <Text style={styles.descricao}>
+          {erro}
+        </Text>
+      ) : null}
+
       <FlatList
         data={linhas}
         keyExtractor={(item) => String(item.cl)}
@@ -66,27 +89,11 @@ export default function PesquisaScreen() {
           !carregando && pesquisou && !erro ? (
             <Text style={styles.descricao}>
               Nenhuma linha encontrada.
-    </Text>
-  ) : null
-}
+            </Text>
+          ) : null
+        }
         renderItem={({ item }) => (
-          <Link
-            href={{
-              pathname: '/linha/[id]',
-              params: { id: String(item.cl) },
-            }}
-            asChild
-          >
-            <Pressable style={styles.cartao}>
-              <Text style={styles.numeroLinha}>
-                Linha {item.lt}-{item.tl}
-              </Text>
-
-              <Text style={styles.descricao}>
-                {item.tp} / {item.ts}
-              </Text>
-            </Pressable>
-          </Link>
+          <LinhaCard linha={item} />
         )}
       />
     </View>
@@ -119,34 +126,20 @@ const styles = StyleSheet.create({
     color: '#334155',
     marginBottom: 16,
   },
-  cartao: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 10,
-    padding: 16,
-    marginBottom: 12,
-  },
-  numeroLinha: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2563EB',
-    marginBottom: 6,
-  },
   descricao: {
     fontSize: 14,
     color: '#64748B',
   },
   botaoBusca: {
-  backgroundColor: '#2563EB',
-  padding: 14,
-  borderRadius: 8,
-  alignItems: 'center',
-  marginBottom: 20,
-},
-textoBotao: {
-  color: '#FFFFFF',
-  fontSize: 16,
-  fontWeight: 'bold',
-},
+    backgroundColor: '#2563EB',
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  textoBotao: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });
