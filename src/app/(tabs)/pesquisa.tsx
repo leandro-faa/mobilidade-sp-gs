@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { Link } from 'expo-router';
 
 export default function PesquisaScreen() {
   const [pesquisa, setPesquisa] = useState('');
@@ -14,6 +15,15 @@ export default function PesquisaScreen() {
         value={pesquisa}
         onChangeText={setPesquisa}
       />
+
+      <Link
+        href={{
+          pathname: '/linha/[id]',
+          params: { id: 'teste-123' },
+        }}
+>
+  Visualizar detalhes de uma linha
+</Link>
 
       <Text>Os resultados aparecerão aqui.</Text>
     </View>
