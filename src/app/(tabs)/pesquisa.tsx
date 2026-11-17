@@ -9,38 +9,39 @@ import {
   Pressable,
 } from 'react-native';
 import { Link } from 'expo-router';
+import type { LinhaOnibus } from '@/types/linha';
+import { buscarLinhas } from '@/services/linhas';
 
-// Dados de exemplo para testar a interface
-const linhasExemplo = [
-  {
-    cl: 1273,
-    lt: '8000',
-    tl: 10,
-    tp: 'PCA. RAMOS DE AZEVEDO',
-    ts: 'TERMINAL LAPA',
-  },
-  {
-    cl: 34041,
-    lt: '8000',
-    tl: 10,
-    tp: 'PCA. RAMOS DE AZEVEDO',
-    ts: 'TERMINAL LAPA',
-  },
-];
 
 export default function PesquisaScreen() {
   const [pesquisa, setPesquisa] = useState('');
+  const [linhas, setLinhas] = useState<LinhaOnibus[]>([]);
+  const [carregando, setCarregando] = useState(false);
+  const [erro, setErro] = useState('');
+  const [pesquisou, setPesquisou] = useState(false);
 
-  // Filtra as linhas conforme o texto digitado
-  const linhasFiltradas = linhasExemplo.filter((linha) => {
-    const termo = pesquisa.trim().toLowerCase();
+    async function pesquisarLinhas() {
+      setPesquisou(true);
+      setErro('');
 
-    const informacoes =
-      `${linha.lt}-${linha.tl} ${linha.tp} ${linha.ts}`.toLowerCase();
+      if (!pesquisa.trim()) {
+        setLinhas([]);
+        setErro('Digite o número ou nome da linha.');
+        return;
+      }
 
-    return informacoes.includes(termo);
-  });
+      setCarregando(true);
 
+      try {
+        const resultado = await buscarLinhas(pesquisa);
+        setLinhas(resultado);
+      } catch {
+        setLinhas([]);
+        setErro('Não foi possível realizar a pesquisa.');
+      } finally {
+        setCarregando(false);
+      }
+    }
   return (
     <View style={styles.container}>
       <Text style={styles.titulo}>Pesquisar ônibus</Text>
@@ -51,17 +52,23 @@ export default function PesquisaScreen() {
         value={pesquisa}
         onChangeText={setPesquisa}
       />
+      <Pressable onPress={pesquisarLinhas} style={styles.botaoBusca}>
+        <Text style={styles.textoBotao}>Buscar linhas</Text>
+</Pressable>
 
       <Text style={styles.subtitulo}>Linhas disponíveis</Text>
-
+      {carregando && <Text>Buscando linhas...</Text>}
+      {erro ? <Text>{erro}</Text> : null}
       <FlatList
-        data={linhasFiltradas}
+        data={linhas}
         keyExtractor={(item) => String(item.cl)}
         ListEmptyComponent={
-          <Text style={styles.descricao}>
-            Nenhuma linha encontrada.
-          </Text>
-        }
+          !carregando && pesquisou && !erro ? (
+            <Text style={styles.descricao}>
+              Nenhuma linha encontrada.
+    </Text>
+  ) : null
+}
         renderItem={({ item }) => (
           <Link
             href={{
@@ -130,4 +137,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#64748B',
   },
+  botaoBusca: {
+  backgroundColor: '#2563EB',
+  padding: 14,
+  borderRadius: 8,
+  alignItems: 'center',
+  marginBottom: 20,
+},
+textoBotao: {
+  color: '#FFFFFF',
+  fontSize: 16,
+  fontWeight: 'bold',
+},
 });
