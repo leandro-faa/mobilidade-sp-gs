@@ -7,6 +7,7 @@ import {
   StyleSheet,
   FlatList,
   Pressable,
+  ActivityIndicator,
 } from 'react-native';
 
 import type { LinhaOnibus } from '@/types/linha';
@@ -21,11 +22,15 @@ export default function PesquisaScreen() {
   const [pesquisou, setPesquisou] = useState(false);
 
   async function pesquisarLinhas() {
+    if (carregando) return;
+
+    const termo = pesquisa.trim();
+
     setPesquisou(true);
     setErro('');
+    setLinhas([]);
 
-    if (!pesquisa.trim()) {
-      setLinhas([]);
+    if (!termo) {
       setErro('Digite o número ou nome da linha.');
       return;
     }
@@ -33,11 +38,12 @@ export default function PesquisaScreen() {
     setCarregando(true);
 
     try {
-      const resultado = await buscarLinhas(pesquisa);
+      const resultado = await buscarLinhas(termo);
       setLinhas(resultado);
     } catch {
-      setLinhas([]);
-      setErro('Não foi possível realizar a pesquisa.');
+      setErro(
+        'Não foi possível realizar a pesquisa. Tente novamente.'
+      );
     } finally {
       setCarregando(false);
     }
@@ -45,56 +51,74 @@ export default function PesquisaScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.titulo}>
-        Pesquisar ônibus
-      </Text>
+      <Text style={styles.titulo}>Pesquisar ônibus</Text>
 
       <TextInput
         style={styles.campoPesquisa}
         placeholder="Digite o número ou nome da linha"
         value={pesquisa}
         onChangeText={setPesquisa}
+        returnKeyType="search"
+        onSubmitEditing={pesquisarLinhas}
+        editable={!carregando}
       />
 
       <Pressable
         onPress={pesquisarLinhas}
-        style={styles.botaoBusca}
         disabled={carregando}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: carregando }}
+        style={[
+          styles.botaoBusca,
+          carregando && styles.botaoDesabilitado,
+        ]}
       >
         <Text style={styles.textoBotao}>
-          Buscar linhas
+          {carregando ? 'Buscando...' : 'Buscar linhas'}
         </Text>
       </Pressable>
 
-      <Text style={styles.subtitulo}>
-        Linhas disponíveis
-      </Text>
+      <Text style={styles.subtitulo}>Linhas disponíveis</Text>
 
       {carregando && (
-        <Text style={styles.descricao}>
-          Buscando linhas...
-        </Text>
+        <View style={styles.status}>
+          <ActivityIndicator size="small" color="#2563EB" />
+          <Text style={styles.descricao}>
+            Buscando linhas...
+          </Text>
+        </View>
       )}
 
       {erro ? (
-        <Text style={styles.descricao}>
-          {erro}
-        </Text>
+        <Text style={styles.mensagemErro}>{erro}</Text>
       ) : null}
+
+      {!carregando &&
+        !erro &&
+        pesquisou &&
+        linhas.length > 0 && (
+          <Text style={styles.contador}>
+            {linhas.length}{' '}
+            {linhas.length === 1
+              ? 'linha encontrada'
+              : 'linhas encontradas'}
+          </Text>
+        )}
 
       <FlatList
         data={linhas}
         keyExtractor={(item) => String(item.cl)}
-        ListEmptyComponent={
-          !carregando && pesquisou && !erro ? (
-            <Text style={styles.descricao}>
-              Nenhuma linha encontrada.
-            </Text>
-          ) : null
-        }
         renderItem={({ item }) => (
           <LinhaCard linha={item} />
         )}
+        ListEmptyComponent={
+          !carregando && pesquisou && !erro ? (
+           <Text style={styles.descricao}>
+              Nenhuma linha encontrada.
+           </Text>
+        ) : undefined
+}
+        keyboardShouldPersistTaps="handled"
       />
     </View>
   );
@@ -119,6 +143,22 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 24,
     backgroundColor: '#FFFFFF',
+    fontSize: 16,
+  },
+  botaoBusca: {
+    backgroundColor: '#2563EB',
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  botaoDesabilitado: {
+    backgroundColor: '#94A3B8',
+  },
+  textoBotao: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   subtitulo: {
     fontSize: 18,
@@ -130,16 +170,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#64748B',
   },
-  botaoBusca: {
-    backgroundColor: '#2563EB',
-    padding: 14,
-    borderRadius: 8,
+  status: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    gap: 10,
+    marginBottom: 16,
   },
-  textoBotao: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
+  mensagemErro: {
+    fontSize: 14,
+    color: '#DC2626',
+    marginBottom: 16,
+  },
+  contador: {
+    fontSize: 14,
+    color: '#475569',
+    marginBottom: 12,
   },
 });

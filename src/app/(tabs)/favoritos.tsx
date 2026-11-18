@@ -1,16 +1,22 @@
 import { View, Text, StyleSheet } from 'react-native';
-
+import { FlatList } from 'react-native';
+import { LinhaCard } from '@/components/linha-card';
+import type { LinhaOnibus } from '@/types/linha';
 export default function FavoritosScreen() {
+  const favoritos: LinhaOnibus[] = [];
   return (
-    <View style={styles.container}>
-      <Text style={styles.titulo}>
-        Minhas linhas favoritas
-      </Text>
-
-      <Text style={styles.mensagem}>
-        Você ainda não possui linhas favoritas.
-      </Text>
-    </View>
+    <FlatList
+  data={favoritos}
+  keyExtractor={(item) => String(item.cl)}
+  renderItem={({ item }) => (
+    <LinhaCard linha={item} />
+  )}
+  ListEmptyComponent={
+    <Text style={styles.mensagem}>
+      Você ainda não possui linhas favoritas.
+    </Text>
+  }
+/>
   );
 }
 
