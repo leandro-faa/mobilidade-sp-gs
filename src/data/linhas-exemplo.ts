@@ -7,6 +7,7 @@ export const linhasExemplo: LinhaOnibus[] = [
     tl: 10,
     tp: 'PCA. RAMOS DE AZEVEDO',
     ts: 'TERMINAL LAPA',
+    sl:1
   },
   {
     cl: 34041,
@@ -14,5 +15,6 @@ export const linhasExemplo: LinhaOnibus[] = [
     tl: 10,
     tp: 'PCA. RAMOS DE AZEVEDO',
     ts: 'TERMINAL LAPA',
+    sl:2
   },
 ];

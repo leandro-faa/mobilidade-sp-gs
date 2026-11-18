@@ -4,4 +4,5 @@ export interface LinhaOnibus {
   tl: number;
   tp: string;
   ts: string;
+  sl?: number;
 }

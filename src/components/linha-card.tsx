@@ -11,9 +11,16 @@ export function LinhaCard({ linha }: LinhaCardProps) {
   return (
     <Link
       href={{
-        pathname: '/linha/[id]',
-        params: { id: String(linha.cl) },
-      }}
+  pathname: '/linha/[id]',
+  params: {
+    id: String(linha.cl),
+    lt: linha.lt,
+    tl: String(linha.tl),
+    tp: linha.tp,
+    ts: linha.ts,
+    sl: String(linha.sl ?? ''),
+  },
+}}
       asChild
     >
       <Pressable style={styles.cartao}>
