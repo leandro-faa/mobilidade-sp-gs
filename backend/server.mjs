@@ -16,6 +16,17 @@ function responderJSON(res, status, dados) {
 }
 
 const servidor = http.createServer(async (req, res) => {
+    const origensPermitidas = new Set([
+  'http://localhost:8081',
+  'http://127.0.0.1:8081',
+]);
+
+const origem = req.headers.origin;
+
+if (origem && origensPermitidas.has(origem)) {
+  res.setHeader('Access-Control-Allow-Origin', origem);
+  res.setHeader('Vary', 'Origin');
+}
   const url = new URL(req.url, 'http://localhost');
 
   if (req.method !== 'GET' || url.pathname !== '/api/linhas') {
@@ -80,7 +91,7 @@ const servidor = http.createServer(async (req, res) => {
   }
 });
 
-servidor.listen(PORTA, '127.0.0.1', () => {
+servidor.listen(PORTA, '0.0.0.0', () => {
   console.log(
     `Backend disponível em http://localhost:${PORTA}`
   );

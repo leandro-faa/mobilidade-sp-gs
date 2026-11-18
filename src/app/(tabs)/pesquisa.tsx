@@ -40,11 +40,16 @@ export default function PesquisaScreen() {
     try {
       const resultado = await buscarLinhas(termo);
       setLinhas(resultado);
-    } catch {
-      setErro(
-        'Não foi possível realizar a pesquisa. Tente novamente.'
-      );
-    } finally {
+    } catch (erro) {
+  const mensagem =
+    erro instanceof Error
+      ? erro.message
+      : 'Erro desconhecido';
+
+  console.error('Erro na pesquisa:', mensagem);
+  setErro(`Erro: ${mensagem}`);
+}
+     finally {
       setCarregando(false);
     }
   }
