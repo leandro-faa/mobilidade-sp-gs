@@ -29,6 +29,62 @@ if (origem && origensPermitidas.has(origem)) {
 }
   const url = new URL(req.url, 'http://localhost');
 
+  
+if (req.method === 'GET' && url.pathname === '/api/previsoes') {
+  const codigoLinha = url.searchParams.get('codigoLinha');
+
+  if (
+    !codigoLinha ||
+    !/^[1-9]\d*$/.test(codigoLinha) ||
+    !Number.isSafeInteger(Number(codigoLinha))
+  ) {
+    return responderJSON(res, 400, {
+      erro: 'Informe um código de linha válido.',
+    });
+  }
+
+  try {
+    const token = await obterToken();
+
+    const endereco =
+      `${API_SPTRANS}/Previsao/Linha?codigoLinha=` +
+      encodeURIComponent(codigoLinha);
+
+    const resposta = await fetch(endereco, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      },
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!resposta.ok) {
+      console.error('SPTrans HTTP:', resposta.status);
+
+      return responderJSON(res, 502, {
+        erro: 'Falha ao consultar previsões da SPTrans.',
+      });
+    }
+
+    const previsao = await resposta.json();
+
+    if (!previsao || !Array.isArray(previsao.ps)) {
+      throw new Error('Formato de previsão inesperado.');
+    }
+
+    return responderJSON(res, 200, {
+      hr: previsao.hr,
+      ps: previsao.ps,
+    });
+  } catch (erro) {
+    console.error('Erro na previsão:', erro.message);
+
+    return responderJSON(res, 502, {
+      erro: 'Não foi possível consultar as previsões.',
+    });
+  }
+}
+  
   if (req.method !== 'GET' || url.pathname !== '/api/linhas') {
     return responderJSON(res, 404, {
       erro: 'Endpoint não encontrado.',
