@@ -1,16 +1,19 @@
-import { useEffect, useState } from 'react';
-import { ActivityIndicator } from 'react-native';
-import { buscarPrevisoes } from '@/services/previsoes';
-import type { PrevisaoLinha } from '@/types/previsao';
 
-import { useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   ScrollView,
   View,
   Text,
   Pressable,
   StyleSheet,
 } from 'react-native';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+
+import { buscarPrevisoes } from '@/services/previsoes';
+import { alternarFavorito, listarFavoritos } from '@/services/favoritos';
+import type { PrevisaoLinha } from '@/types/previsao';
+import type { LinhaOnibus } from '@/types/linha';
 
 export default function DetalhesLinha() {
   const { id, lt, tl, tp, ts, sl } = useLocalSearchParams<{
@@ -30,10 +33,19 @@ export default function DetalhesLinha() {
       : sl === '2'
         ? 'Terminal secundário → Terminal principal'
         : 'Sentido não informado';
+
+  // Estados das previsões
   const [previsao, setPrevisao] = useState<PrevisaoLinha | null>(null);
   const [carregandoPrevisoes, setCarregandoPrevisoes] = useState(true);
   const [erroPrevisoes, setErroPrevisoes] = useState(false);
 
+  // Estados dos favoritos
+  const [favoritado, setFavoritado] = useState(false);
+  const [carregandoFavorito, setCarregandoFavorito] = useState(true);
+  const [salvandoFavorito, setSalvandoFavorito] = useState(false);
+  const [erroFavoritos, setErroFavoritos] = useState('');
+
+  // Consultar previsões da linha
   useEffect(() => {
     let ativo = true;
 
@@ -68,8 +80,93 @@ export default function DetalhesLinha() {
     };
   }, [id]);
 
-const paradasComPrevisao =
-  previsao?.ps.filter((parada) => parada.vs.length > 0) ?? [];
+  // Verificar se a linha está nos favoritos
+  useFocusEffect(
+    useCallback(() => {
+      let ativo = true;
+
+      setCarregandoFavorito(true);
+      setErroFavoritos('');
+
+      listarFavoritos()
+        .then((favoritos) => {
+          if (ativo) {
+            setFavoritado(
+              favoritos.some((linha) => linha.cl === Number(id))
+            );
+          }
+        })
+        .catch(() => {
+          if (ativo) {
+            setErroFavoritos(
+              'Não foi possível carregar os favoritos.'
+            );
+          }
+        })
+        .finally(() => {
+          if (ativo) {
+            setCarregandoFavorito(false);
+          }
+        });
+
+      return () => {
+        ativo = false;
+      };
+    }, [id])
+  );
+
+  // Adicionar ou remover a linha dos favoritos
+  async function alterarFavorito() {
+    if (
+      !lt ||
+      !tl ||
+      !tp ||
+      !ts ||
+      carregandoFavorito ||
+      salvandoFavorito ||
+      erroFavoritos
+    ) {
+      return;
+    }
+
+    const codigo = Number(id);
+    const numeroVariacao = Number(tl);
+
+    if (
+      !Number.isSafeInteger(codigo) ||
+      codigo <= 0 ||
+      !Number.isFinite(numeroVariacao)
+    ) {
+      setErroFavoritos('Dados da linha inválidos.');
+      return;
+    }
+
+    const linha: LinhaOnibus = {
+      cl: codigo,
+      lt,
+      tl: numeroVariacao,
+      tp,
+      ts,
+      sl: sl ? Number(sl) : undefined,
+    };
+
+    setSalvandoFavorito(true);
+    setErroFavoritos('');
+
+    try {
+      const resultado = await alternarFavorito(linha);
+      setFavoritado(resultado);
+    } catch {
+      setErroFavoritos(
+        'Não foi possível salvar os favoritos.'
+      );
+    } finally {
+      setSalvandoFavorito(false);
+    }
+  }
+
+  const paradasComPrevisao =
+    previsao?.ps.filter((parada) => parada.vs.length > 0) ?? [];
 
   return (
     <ScrollView
@@ -87,6 +184,7 @@ const paradasComPrevisao =
         </Text>
       ) : (
         <>
+          {/* Informações da linha */}
           <View style={styles.cartao}>
             <Text style={styles.numeroLinha}>
               Linha {lt}-{tl}
@@ -109,66 +207,93 @@ const paradasComPrevisao =
             <Text style={styles.rotulo}>
               Sentido de operação
             </Text>
-            <Text style={styles.informacao}>{sentido}</Text>
+            <Text style={styles.informacao}>
+              {sentido}
+            </Text>
           </View>
 
-          
-  <View style={styles.cartao}>
-    <Text style={styles.subtitulo}>
-      Previsões de chegada
-    </Text>
-
-    {carregandoPrevisoes ? (
-      <ActivityIndicator size="small" color="#2563EB" />
-    ) : erroPrevisoes ? (
-      <Text style={styles.descricao}>
-        Não foi possível consultar as previsões desta linha
-        no momento.
-      </Text>
-    ) : paradasComPrevisao.length === 0 ? (
-      <Text style={styles.descricao}>
-        Nenhum horário previsto disponível nesta consulta.
-      </Text>
-    ) : (
-      <>
-        <Text style={styles.referencia}>
-          Horário de referência: {previsao?.hr}
-        </Text>
-
-        {paradasComPrevisao.map((parada) => (
-          <View key={parada.cp} style={styles.parada}>
-            <Text style={styles.nomeParada}>
-              {parada.np}
+          {/* Previsões de chegada */}
+          <View style={styles.cartao}>
+            <Text style={styles.subtitulo}>
+              Previsões de chegada
             </Text>
 
-            {parada.vs.map((veiculo, indice) => (
-              <Text
-                key={`${veiculo.p}-${indice}`}
-                style={styles.horarioChegada}
-              >
-                Chegada prevista: {veiculo.t}
+            {carregandoPrevisoes ? (
+              <ActivityIndicator
+                size="small"
+                color="#2563EB"
+              />
+            ) : erroPrevisoes ? (
+              <Text style={styles.descricao}>
+                Não foi possível consultar as previsões
+                desta linha no momento.
               </Text>
-            ))}
+            ) : paradasComPrevisao.length === 0 ? (
+              <Text style={styles.descricao}>
+                Nenhum horário previsto disponível
+                nesta consulta.
+              </Text>
+            ) : (
+              <>
+                <Text style={styles.referencia}>
+                  Horário de referência: {previsao?.hr}
+                </Text>
+
+                {paradasComPrevisao.map((parada) => (
+                  <View
+                    key={parada.cp}
+                    style={styles.parada}
+                  >
+                    <Text style={styles.nomeParada}>
+                      {parada.np}
+                    </Text>
+
+                    {parada.vs.map((veiculo, indice) => (
+                      <Text
+                        key={`${veiculo.p}-${indice}`}
+                        style={styles.horarioChegada}
+                      >
+                        Chegada prevista: {veiculo.t}
+                      </Text>
+                    ))}
+                  </View>
+                ))}
+              </>
+            )}
           </View>
-        ))}
-      </>
-    )}
-  </View>
 
-
+          {/* Botão de favoritos */}
           <Pressable
-            style={styles.botaoDesabilitado}
-            disabled
+            style={[
+              styles.botaoFavorito,
+              (carregandoFavorito ||
+                salvandoFavorito ||
+                Boolean(erroFavoritos)) &&
+                styles.botaoIndisponivel,
+            ]}
+            disabled={
+              carregandoFavorito ||
+              salvandoFavorito ||
+              Boolean(erroFavoritos)
+            }
+            onPress={() => void alterarFavorito()}
           >
             <Text style={styles.textoBotao}>
-              Adicionar aos favoritos
+              {carregandoFavorito
+                ? 'Carregando favoritos...'
+                : salvandoFavorito
+                  ? 'Salvando...'
+                  : favoritado
+                    ? 'Remover dos favoritos'
+                    : 'Adicionar aos favoritos'}
             </Text>
           </Pressable>
 
-          <Text style={styles.aviso}>
-            Funcionalidade disponível após
-            a integração com o AsyncStorage.
-          </Text>
+          {erroFavoritos ? (
+            <Text style={styles.aviso}>
+              {erroFavoritos}
+            </Text>
+          ) : null}
         </>
       )}
     </ScrollView>
@@ -231,11 +356,14 @@ const styles = StyleSheet.create({
     color: '#64748B',
     lineHeight: 23,
   },
-  botaoDesabilitado: {
-    backgroundColor: '#94A3B8',
+  botaoFavorito: {
+    backgroundColor: '#2563EB',
     padding: 16,
     borderRadius: 10,
     alignItems: 'center',
+  },
+  botaoIndisponivel: {
+    opacity: 0.6,
   },
   textoBotao: {
     color: '#FFFFFF',
@@ -249,10 +377,10 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   referencia: {
-  fontSize: 13,
-  color: '#64748B',
-  marginBottom: 16,
-},
+    fontSize: 13,
+    color: '#64748B',
+    marginBottom: 16,
+  },
   parada: {
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
