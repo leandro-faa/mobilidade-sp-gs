@@ -1,56 +1,136 @@
-# Welcome to your Expo app 👋
+# Mobilidade SP
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**Global Solution 2026.2**
 
-## Get started
+**Disciplina:** Cross-Platform Application Development — FIAP
 
-1. Install dependencies
+## Integrantes
 
-   ```bash
-   npm install
-   ```
+| Nome completo | RM |
+|---|---|
+| Ernandes da Silva Jesus | 566611 |
+| Leandro Filippini Aguiar Alves | 568157 |
+| Raul Bridi Albano | 567772 |
 
-2. Start the app
+## Sobre o projeto
 
-   ```bash
-   npx expo start
-   ```
+O **Mobilidade SP** é um aplicativo desenvolvido em React Native com Expo para auxiliar cidadãos na consulta de linhas de ônibus da cidade de São Paulo.
 
-In the output, you'll find options to open the app in a
+O aplicativo utiliza a API Olho Vivo da SPTrans para consultar informações das linhas e previsões de chegada dos ônibus aos pontos de parada. Também permite salvar linhas favoritas localmente utilizando AsyncStorage.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Funcionalidades
 
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- **Pesquisa de linhas:** consulta de linhas de ônibus utilizando dados da SPTrans.
+- **Detalhes das linhas:** apresentação do código da linha, terminais e sentido de operação.
+- **Previsões de chegada:** exibição de horários estimados de chegada dos ônibus, organizados por ponto de parada.
+- **Favoritos:** possibilidade de adicionar, consultar e remover linhas favoritas.
+- **Persistência local:** armazenamento dos favoritos no dispositivo, mesmo após o encerramento do aplicativo.
+- **Navegação:** interface com telas de início, pesquisa, detalhes e favoritos.
 
-## Get a fresh project
+## Demonstração do aplicativo
 
-When you're ready, run:
+O vídeo abaixo apresenta o funcionamento do Mobilidade SP, incluindo a pesquisa de linhas de ônibus, a consulta de detalhes e previsões de chegada, além da utilização dos favoritos com persistência local.
+
+**Link para assistir à demonstração:** https://youtube.com/shorts/yd6P2ivWXZs?feature=share
+
+## Tecnologias utilizadas
+
+| Tecnologia | Utilização |
+|---|---|
+| React Native e Expo | Desenvolvimento do aplicativo |
+| TypeScript | Tipagem e organização do código |
+| Expo Router | Navegação entre telas |
+| AsyncStorage | Persistência local dos favoritos |
+| Node.js | Backend de integração |
+| API Olho Vivo — SPTrans | Dados de linhas e previsões |
+| OAuth 2.0 | Autenticação do backend no gateway da API |
+
+## Arquitetura
+
+O aplicativo utiliza um backend Node.js para realizar as consultas à SPTrans.
+
+**Aplicativo React Native → Backend Node.js → Gateway da API Olho Vivo**
+
+O backend é responsável por obter e renovar os tokens OAuth necessários para acessar a API.
+
+As credenciais são mantidas no servidor e não são incluídas no código público do aplicativo.
+
+Os favoritos são armazenados diretamente no dispositivo utilizando AsyncStorage.
+
+## Como executar o projeto
+
+### 1. Pré-requisitos
+
+- Node.js e npm instalados (ambiente testado com Node.js 24).
+- Expo Go instalado no celular.
+- Computador e celular conectados à mesma rede local.
+- Credenciais válidas para a API Olho Vivo no gateway da Prefeitura de São Paulo.
+
+### 2. Clonar o repositório
 
 ```bash
-npm run reset-project
+git clone https://github.com/leandro-faa/mobilidade-sp-gs
+cd mobilidade-sp-gs
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+### 3. Instalar as dependências
 
-### Other setup steps
+```bash
+npm ci
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+### 4. Configurar o ambiente
 
-## Learn more
+Crie um arquivo `.env` na raiz do projeto:
 
-To learn more about developing your project with Expo, look at the following resources:
+```dotenv
+SPTRANS_CONSUMER_KEY=SUA_CONSUMER_KEY
+SPTRANS_CONSUMER_SECRET=SUA_CONSUMER_SECRET
+EXPO_PUBLIC_API_URL=http://IP_DO_COMPUTADOR:3001
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Substitua os valores pelas suas configurações.
 
-## Join the community
+No Windows, é possível identificar o IPv4 do computador com:
 
-Join our community of developers creating universal apps.
+```powershell
+ipconfig
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+A variável `EXPO_PUBLIC_API_URL` deve apontar para o endereço do computador que executa o backend.
+
+### 5. Iniciar o backend
+
+Em um terminal, na pasta do projeto:
+
+```bash
+node --env-file=.env backend/server.mjs
+```
+
+O servidor utilizará a porta `3001`.
+
+### 6. Iniciar o aplicativo
+
+Em outro terminal:
+
+```bash
+npx expo start
+```
+
+Abra o Expo Go no celular e utilize o QR Code exibido no terminal.
+
+Para verificar a tipagem TypeScript, após iniciar o Expo:
+
+```bash
+npx tsc --noEmit
+```
+
+### 7. Utilizar o aplicativo
+
+Na tela Pesquisa, informe o número ou parte do número de uma linha de ônibus.
+
+Selecione um resultado para visualizar seus detalhes e consultar previsões de chegada.
+
+Na tela Detalhes, utilize o botão de favoritos para salvar ou remover a linha. As linhas salvas poderão ser acessadas posteriormente na aba Favoritos.
+
+**Observação:** as previsões dependem da disponibilidade dos dados fornecidos pela SPTrans. Algumas linhas podem não apresentar previsões em determinados momentos.
